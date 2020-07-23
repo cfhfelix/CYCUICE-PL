@@ -185,7 +185,7 @@ string PeekNextChar_chartostring(){
     // peek出下一個可用字元
     string token = "" ;
     char token_char = cin.peek() ;
-    if ( token_char == '\n') gNowLine ++ ;
+//    if ( token_char == '\n') gNowLine ++ ;
     token += token_char ;
     return token ;
 } //GetNextChar_chartostring()
