@@ -96,8 +96,14 @@ struct Parameter{
 /* struct end */
 /* vector start*/
 vector<TokenObject> gOneLineCommand ; // for store a line command
-vector<vector<TokenObject>> gAllLineCommand ; // for store all line command
-vector<Parameter> gRegester ; // for store all had defined parameter
+vector<vector<TokenObject>> gSingleFunctionCommand ; // for store all line command
+vector<vector<vector<TokenObject>>> gAllFunctionDefine ;
+vector<Parameter> gAllDefineGlobalvariable ; // for store all had defined parameter
+
+Parameter gNowGlobalDefinevariable ;
+vector<Parameter> gNowFunctionDefinevariable;
+
+
 /* vector end */
 /* public parameter start */
 int gNowLine = 0 ;
@@ -168,7 +174,7 @@ void Rest_of_Identifier_started_basic_exp();
 void Expression() ;
 bool Assignment_operator( TokenObject TokenObj ) ;
 void Actual_parameter_list() ;
-void rest_of_maybe_conditional_exp_and_rest_of_maybe_logical_OR_exp() ;
+void Rest_of_maybe_conditional_exp_and_rest_of_maybe_logical_OR_exp() ;
 void Rest_of_maybe_logical_OR_exp() ;
 void Rest_of_maybe_logical_AND_exp() ;
 void Maybe_logical_AND_exp() ;
@@ -178,22 +184,21 @@ void Maybe_bit_ex_OR_exp() ;
 void Rest_of_maybe_bit_ex_OR_exp();
 void Rest_of_maybe_bit_AND_exp() ;
 void Maybe_bit_AND_exp() ;
-
-
-
+void Function_definition_or_declarators();
+void Rest_of_PPMM_Identifier_started_basic_exp() ;
 
 
 
 /* function define end */
 void Trace( string msg ){
-//    cout << msg << endl ;
+        cout << msg << endl ;
 } // Trace()
 
 void GetNextInputAndPushTogOnelinecommand(){
     TokenObject TokenObj = GetNextToken() ;
     gOneLineCommand.push_back( TokenObj ) ;
     gOneLineCommand_NowPlace ++ ;
-//    cout << TokenObj.Token << endl ;
+    //    cout << TokenObj.Token << endl ;
 } //GetNextInputAndPushTogOnelinecommand()
 void JumpToNextReadableChar(){
     while ( cin.peek() == ' ' || cin.peek() == '\n' || cin.peek() == '\t' ) {
@@ -317,7 +322,7 @@ TokenObject GetToken_RECOGN(){
             } // if()
             else RECONG_TYPE_Advanced = SignType_multiplication ;
         } // if()
-
+        
         if ( returnToken == "/" ) {
             if ( cin.peek() == '=' ) {
                 swapToken += cin.get() ;
@@ -362,8 +367,8 @@ TokenObject GetToken_RECOGN(){
         } // else if()
         else if ( swapToken == "=" ) {
             if ( swapToken + nextchar == "=="  ) {
-                           returnToken = swapToken + GetNextChar_chartostring() ;
-                           RECONG_TYPE = TokenType_OtherRECOGN ;
+                returnToken = swapToken + GetNextChar_chartostring() ;
+                RECONG_TYPE = TokenType_OtherRECOGN ;
             } // else if()
             else {
                 returnToken = swapToken ;
@@ -477,16 +482,17 @@ void Containconstant(){
     if ( gOneLineCommand[gOneLineCommand_NowPlace].TokenType[TokenObjectType_TokenTyped] != TokenType_Digital || gOneLineCommand[gOneLineCommand_NowPlace].TokenType[TokenObjectType_TokenTyped] != TokenType_Constant ) throw new Unexpected ( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
     GetNextInputAndPushTogOnelinecommand() ;
     if ( gOneLineCommand[gOneLineCommand_NowPlace].Token != "]" ) throw new Unexpected ( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
+    GetNextInputAndPushTogOnelinecommand() ;
 } //Containconstant()
 
 
 void Unsigned_unary_exp(){
-  /*  : Identifier [ '(' [ actual_parameter_list ] ')'
-                   |
-                   [ '[' expression ']' ] [ ( PP | MM ) ]
-                 ]
-    | Constant
-    | '(' expression ')' */
+    /*  : Identifier [ '(' [ actual_parameter_list ] ')'
+     |
+     [ '[' expression ']' ] [ ( PP | MM ) ]
+     ]
+     | Constant
+     | '(' expression ')' */
     Trace("Unsigned_unary_exp start") ;
     if (  gOneLineCommand[gOneLineCommand_NowPlace].TokenType[TokenObjectType_TokenTyped] == TokenType_IDENT) {
         GetNextInputAndPushTogOnelinecommand() ;
@@ -497,7 +503,7 @@ void Unsigned_unary_exp(){
             GetNextInputAndPushTogOnelinecommand() ;
         } // if()
         else if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "[" ){
-             GetNextInputAndPushTogOnelinecommand() ;
+            GetNextInputAndPushTogOnelinecommand() ;
             Expression() ;
             if (  gOneLineCommand[gOneLineCommand_NowPlace].Token != "]" ) throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
             GetNextInputAndPushTogOnelinecommand() ;
@@ -506,12 +512,12 @@ void Unsigned_unary_exp(){
     } // if()
     else if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "("  ){
         GetNextInputAndPushTogOnelinecommand() ;
-                   Expression() ;
+        Expression() ;
         if (  gOneLineCommand[gOneLineCommand_NowPlace].Token != ")" ) throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
     } //else if()
     else if ( gOneLineCommand[gOneLineCommand_NowPlace].TokenType[TokenObjectType_TokenTyped] == TokenType_Digital || gOneLineCommand[gOneLineCommand_NowPlace].TokenType[TokenObjectType_TokenTyped] == TokenType_Constant )  ;
     else throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
-
+    
     GetNextInputAndPushTogOnelinecommand() ;
     Trace("Unsigned_unary_exp end") ;
 } //
@@ -519,12 +525,12 @@ void Unsigned_unary_exp(){
 void Signed_unary_exp(){
     // 已經預取了
     /*
-: Identifier [ '(' [ actual_parameter_list ] ')'
-               |
-               '[' expression ']'
-             ]
-| Constant
-| '(' expression ')' */
+     : Identifier [ '(' [ actual_parameter_list ] ')'
+     |
+     '[' expression ']'
+     ]
+     | Constant
+     | '(' expression ')' */
     Trace("Signed_unary_exp start") ;
     if (  gOneLineCommand[gOneLineCommand_NowPlace].TokenType[TokenObjectType_TokenTyped] == TokenType_IDENT) {
         GetNextInputAndPushTogOnelinecommand() ;
@@ -535,7 +541,7 @@ void Signed_unary_exp(){
             GetNextInputAndPushTogOnelinecommand() ;
         } // if()
         else if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "[" ){
-             GetNextInputAndPushTogOnelinecommand() ;
+            GetNextInputAndPushTogOnelinecommand() ;
             Expression() ;
             if (  gOneLineCommand[gOneLineCommand_NowPlace].Token != "]" ) throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
             GetNextInputAndPushTogOnelinecommand() ;
@@ -543,22 +549,22 @@ void Signed_unary_exp(){
     } // if()
     else if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "("  ){
         GetNextInputAndPushTogOnelinecommand() ;
-                   Expression() ;
+        Expression() ;
         if (  gOneLineCommand[gOneLineCommand_NowPlace].Token != ")" ) throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
         GetNextInputAndPushTogOnelinecommand() ;
     } //else if()
     else if ( gOneLineCommand[gOneLineCommand_NowPlace].TokenType[TokenObjectType_TokenTyped] == TokenType_Digital || gOneLineCommand[gOneLineCommand_NowPlace].TokenType[TokenObjectType_TokenTyped] == TokenType_Constant )  GetNextInputAndPushTogOnelinecommand() ;
     else throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
-
+    
     Trace("Signed_unary_exp end") ;
 } //Signed_unary_exp()
 
 void Unary_exp(){
     /*
-: sign { sign } signed_unary_exp
-| unsigned_unary_exp
-| ( PP | MM ) Identifier [ '[' expression ']' ]
-*/
+     : sign { sign } signed_unary_exp
+     | unsigned_unary_exp
+     | ( PP | MM ) Identifier [ '[' expression ']' ]
+     */
     // 已經預取了
     Trace("Unary_exp start") ;
     if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "++" || gOneLineCommand[gOneLineCommand_NowPlace].Token == "--" ) {
@@ -575,7 +581,7 @@ void Unary_exp(){
     } // if()
     else if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "+" || gOneLineCommand[gOneLineCommand_NowPlace].Token == "-" || gOneLineCommand[gOneLineCommand_NowPlace].Token == "!"){
         GetNextInputAndPushTogOnelinecommand() ;
-       /* sign { sign } signed_unary_exp */
+        /* sign { sign } signed_unary_exp */
         while (  gOneLineCommand[gOneLineCommand_NowPlace].Token == "+" || gOneLineCommand[gOneLineCommand_NowPlace].Token == "-" || gOneLineCommand[gOneLineCommand_NowPlace].Token == "!" ) GetNextInputAndPushTogOnelinecommand() ;
         Signed_unary_exp();
     } //else if()
@@ -585,7 +591,7 @@ void Unary_exp(){
 } // Unary_exp
 
 void Rest_of_maybe_mult_exp(){
-/* : { ( '*' | '/' | '%' ) unary_exp }  could be empty ! */
+    /* : { ( '*' | '/' | '%' ) unary_exp }  could be empty ! */
     Trace("Rest_of_maybe_mult_exp start") ;
     while (  gOneLineCommand[gOneLineCommand_NowPlace].Token == "*" || gOneLineCommand[gOneLineCommand_NowPlace].Token == "/" || gOneLineCommand[gOneLineCommand_NowPlace].Token == "%" ) {
         GetNextInputAndPushTogOnelinecommand() ;
@@ -595,99 +601,143 @@ void Rest_of_maybe_mult_exp(){
 } // Rest_of_maybe_mult_exp()
 
 void Maybe_mult_exp(){
-/* : unary_exp rest_of_maybe_mult_exp  */
+    /* : unary_exp rest_of_maybe_mult_exp  */
+    Trace("Maybe_mult_exp start") ;
+    Unary_exp() ;
+    Rest_of_maybe_mult_exp() ;
+    Trace("Maybe_mult_exp done") ;
 } // Maybe_mult_exp()
 
 void Rest_of_maybe_additive_exp(){
-/* : rest_of_maybe_mult_exp { ( '+' | '-' ) maybe_mult_exp } */
+    /* : rest_of_maybe_mult_exp { ( '+' | '-' ) maybe_mult_exp } */
     Trace("Rest_of_maybe_additive_exp start") ;
-        Rest_of_maybe_mult_exp() ;
-       while ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "+" || gOneLineCommand[gOneLineCommand_NowPlace].Token == "-" ) {
-               GetNextInputAndPushTogOnelinecommand() ;
-               Maybe_mult_exp() ;
-       } // while()
-        Trace("Rest_of_maybe_additive_exp done") ;
+    Rest_of_maybe_mult_exp() ;
+    while ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "+" || gOneLineCommand[gOneLineCommand_NowPlace].Token == "-" ) {
+        GetNextInputAndPushTogOnelinecommand() ;
+        Maybe_mult_exp() ;
+    } // while()
+    Trace("Rest_of_maybe_additive_exp done") ;
 } //Rest_of_maybe_additive_exp()
 
 void Maybe_additive_exp(){
-/* : maybe_mult_exp { ( '+' | '-' ) maybe_mult_exp } */
+    /* : maybe_mult_exp { ( '+' | '-' ) maybe_mult_exp } */
+    Trace("Maybe_additive_exp start") ;
+    Maybe_mult_exp() ;
+    while ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "+" || gOneLineCommand[gOneLineCommand_NowPlace].Token == "-" ) {
+        GetNextInputAndPushTogOnelinecommand() ;
+        Maybe_mult_exp() ;
+    } // while()
+    Trace("Maybe_additive_exp done") ;
 } // Maybe_additive_exp()
 
 void Rest_of_maybe_shift_exp(){
- /*   : rest_of_maybe_additive_exp { ( LS | RS ) maybe_additive_exp } */
+    /*   : rest_of_maybe_additive_exp { ( LS | RS ) maybe_additive_exp } */
     Trace("Rest_of_maybe_shift_exp start") ;
-        Rest_of_maybe_additive_exp() ;
+    Rest_of_maybe_additive_exp() ;
     while ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "<<" || gOneLineCommand[gOneLineCommand_NowPlace].Token == ">>" ) {
-            GetNextInputAndPushTogOnelinecommand() ;
-            Maybe_additive_exp() ;
+        GetNextInputAndPushTogOnelinecommand() ;
+        Maybe_additive_exp() ;
     } // while()
-     Trace("Rest_of_maybe_shift_exp done") ;
+    Trace("Rest_of_maybe_shift_exp done") ;
 }
 
 
 void Maybe_shift_exp() {
-/* : maybe_additive_exp { ( LS | RS ) maybe_additive_exp } */
+    /* : maybe_additive_exp { ( LS | RS ) maybe_additive_exp } */
+    Trace("Maybe_shift_exp start") ;
+    Maybe_additive_exp() ;
+    while ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "<<" || gOneLineCommand[gOneLineCommand_NowPlace].Token == ">>" ) {
+        GetNextInputAndPushTogOnelinecommand() ;
+        Maybe_additive_exp() ;
+    } // while()
+    Trace("Maybe_shift_exp done") ;
 }
 
 void Rest_of_maybe_relational_exp(){
- /*   : rest_of_maybe_shift_exp
-      { ( '<' | '>' | LE | GE ) maybe_shift_exp } */
+    /*   : rest_of_maybe_shift_exp
+     { ( '<' | '>' | LE | GE ) maybe_shift_exp } */
     Trace("Rest_of_maybe_relational_exp start") ;
-           Rest_of_maybe_shift_exp() ;
-       while ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "<" || gOneLineCommand[gOneLineCommand_NowPlace].Token == ">" || gOneLineCommand[gOneLineCommand_NowPlace].Token == ">="|| gOneLineCommand[gOneLineCommand_NowPlace].Token == "<=") {
-               GetNextInputAndPushTogOnelinecommand() ;
-               Maybe_shift_exp() ;
-       } // while()
-           
+    Rest_of_maybe_shift_exp() ;
+    while ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "<" || gOneLineCommand[gOneLineCommand_NowPlace].Token == ">" || gOneLineCommand[gOneLineCommand_NowPlace].Token == ">="|| gOneLineCommand[gOneLineCommand_NowPlace].Token == "<=") {
+        GetNextInputAndPushTogOnelinecommand() ;
+        Maybe_shift_exp() ;
+    } // while()
+    
     Trace("Rest_of_maybe_relational_exp done") ;
 }
 
 void Maybe_relational_exp(){
     /*
-: maybe_shift_exp
-  { ( '<' | '>' | LE | GE ) maybe_shift_exp }
-*/
-}
+     : maybe_shift_exp
+     { ( '<' | '>' | LE | GE ) maybe_shift_exp }
+     */
+    Trace("Maybe_relational_exp start") ;
+    Maybe_shift_exp() ;
+    while ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "<" || gOneLineCommand[gOneLineCommand_NowPlace].Token == ">" || gOneLineCommand[gOneLineCommand_NowPlace].Token == ">="|| gOneLineCommand[gOneLineCommand_NowPlace].Token == "<=") {
+        GetNextInputAndPushTogOnelinecommand() ;
+        Maybe_shift_exp() ;
+    } // while()
+    
+    Trace("Maybe_relational_exp done") ;
+} // Maybe_relational_exp()
 
 void Rest_of_maybe_equality_exp(){
-/* : rest_of_maybe_relational_exp
-  { ( EQ | NEQ ) maybe_relational_exp }
- */
+    /* : rest_of_maybe_relational_exp
+     { ( EQ | NEQ ) maybe_relational_exp }
+     */
     Trace("Rest_of_maybe_equality_exp start") ;
-        Rest_of_maybe_relational_exp() ;
+    Rest_of_maybe_relational_exp() ;
     while ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "==" || gOneLineCommand[gOneLineCommand_NowPlace].Token == "!=" ) {
-            GetNextInputAndPushTogOnelinecommand() ;
-            Maybe_relational_exp() ;
+        GetNextInputAndPushTogOnelinecommand() ;
+        Maybe_relational_exp() ;
     } // while()
-        
+    
     Trace("Rest_of_maybe_equality_exp done") ;
 } // Rest_of_maybe_equality_exp()
 
 void Maybe_equality_exp(){
-/* : maybe_relational_exp
-  { ( EQ | NEQ ) maybe_relational_exp}
-*/
+    /* : maybe_relational_exp
+     { ( EQ | NEQ ) maybe_relational_exp}
+     */
+    Trace("Maybe_equality_exp start") ;
+    Maybe_relational_exp() ;
+    while ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "==" || gOneLineCommand[gOneLineCommand_NowPlace].Token == "!=" ) {
+        GetNextInputAndPushTogOnelinecommand() ;
+        Maybe_equality_exp() ;
+    } // while()
     
+    
+    Trace("Maybe_equality_exp done") ;
 } //Maybe_equality_exp()
+
 void Rest_of_maybe_bit_AND_exp(){
-/* : rest_of_maybe_equality_exp { '&' maybe_equality_exp } */
+    /* : rest_of_maybe_equality_exp { '&' maybe_equality_exp } */
     Trace("Rest_of_maybe_bit_AND_exp start") ;
-     Rest_of_maybe_equality_exp() ;
-     while ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "&" ) {
-         GetNextInputAndPushTogOnelinecommand() ;
-         Maybe_equality_exp() ;
-     } // while()
-     
-     Trace("Rest_of_maybe_bit_AND_exp done") ;
-     
+    Rest_of_maybe_equality_exp() ;
+    while ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "&" ) {
+        GetNextInputAndPushTogOnelinecommand() ;
+        Maybe_equality_exp() ;
+    } // while()
+    
+    Trace("Rest_of_maybe_bit_AND_exp done") ;
+    
 } // Rest_of_maybe_bit_AND_exp
 
 void Maybe_bit_AND_exp(){
-/* : maybe_equality_exp { '&' maybe_equality_exp } */
+    /* : maybe_equality_exp { '&' maybe_equality_exp } */
+    Trace("Maybe_bit_AND_exp start") ;
+    Maybe_equality_exp() ;
+    while ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "&" ) {
+        GetNextInputAndPushTogOnelinecommand() ;
+        Maybe_equality_exp() ;
+    } // while()
+    
+    
+    Trace("Maybe_bit_AND_exp done") ;
 } // Maybe_bit_AND_exp
 
 void Rest_of_maybe_bit_ex_OR_exp(){
-/* : rest_of_maybe_bit_AND_exp { '^' maybe_bit_AND_exp } */
+    /* : rest_of_maybe_bit_AND_exp { '^' maybe_bit_AND_exp } */
     Trace("Rest_of_maybe_bit_ex_OR_exp start") ;
     Rest_of_maybe_bit_AND_exp() ;
     while ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "^" ) {
@@ -700,17 +750,26 @@ void Rest_of_maybe_bit_ex_OR_exp(){
 } //Rest_of_maybe_bit_ex_OR_exp()
 
 void Maybe_bit_ex_OR_exp(){
-/* : maybe_bit_AND_exp { '^' maybe_bit_AND_exp } */
-}
+    /* : maybe_bit_AND_exp { '^' maybe_bit_AND_exp } */
+    Trace("Maybe_logical_AND_exp start") ;
+    Maybe_bit_AND_exp() ;
+    while ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "^" ) {
+        GetNextInputAndPushTogOnelinecommand() ;
+        Maybe_bit_AND_exp() ;
+    } // while()
+    
+    
+    Trace("Maybe_logical_AND_exp done") ;
+} // Maybe_bit_ex_OR_exp()
 
 void Rest_of_maybe_bit_OR_exp(){
-     // 已經預取了
-   /* : rest_of_maybe_bit_ex_OR_exp { '|' maybe_bit_ex_OR_exp } */
+    // 已經預取了
+    /* : rest_of_maybe_bit_ex_OR_exp { '|' maybe_bit_ex_OR_exp } */
     Trace("rest_of_maybe_bit_OR_exp start") ;
     Rest_of_maybe_bit_ex_OR_exp() ;
     while ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "|" ) {
-           GetNextInputAndPushTogOnelinecommand() ;
-           Maybe_bit_ex_OR_exp() ;
+        GetNextInputAndPushTogOnelinecommand() ;
+        Maybe_bit_ex_OR_exp() ;
     } // while()
     Trace("rest_of_maybe_bit_OR_exp done") ;
     
@@ -718,34 +777,49 @@ void Rest_of_maybe_bit_OR_exp(){
 
 
 void Maybe_bit_OR_exp(){
-     // 已經預取了
-/* : maybe_bit_ex_OR_exp { '|' maybe_bit_ex_OR_exp } */
-}
+    // 已經預取了
+    /* : maybe_bit_ex_OR_exp { '|' maybe_bit_ex_OR_exp } */
+    Trace("Maybe_logical_AND_exp start") ;
+    Maybe_bit_ex_OR_exp() ;
+    while ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "|" ) {
+        GetNextInputAndPushTogOnelinecommand() ;
+        Maybe_bit_ex_OR_exp() ;
+    } // while()
+    
+    
+    Trace("Maybe_logical_AND_exp done") ;
+} //Maybe_bit_OR_exp()
 
 void Rest_of_maybe_logical_AND_exp(){
     // 已經預取了
-/* : rest_of_maybe_bit_OR_exp { AND maybe_bit_OR_exp } */
+    /* : rest_of_maybe_bit_OR_exp { AND maybe_bit_OR_exp } */
     Trace("Rest_of_maybe_logical_AND_exp start") ;
-     
+    
     while ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "&&" ) {
-           GetNextInputAndPushTogOnelinecommand() ;
-           Maybe_bit_OR_exp() ;
+        GetNextInputAndPushTogOnelinecommand() ;
+        Maybe_bit_OR_exp() ;
     } // while()
-       // 已經幫別人預取了
+    // 已經幫別人預取了
     Trace("Rest_of_maybe_logical_AND_exp done") ;
 } // Rest_of_maybe_logical_AND_exp()
 
 
 void Maybe_logical_AND_exp(){
-/* : maybe_bit_OR_exp { AND maybe_bit_OR_exp }  */
+    /* : maybe_bit_OR_exp { AND maybe_bit_OR_exp }  */
     Trace("Maybe_logical_AND_exp start") ;
+    Maybe_bit_OR_exp() ;
+    while ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "&&" ) {
+        GetNextInputAndPushTogOnelinecommand() ;
+        Maybe_bit_OR_exp() ;
+    } // while()
+    
     
     Trace("Maybe_logical_AND_exp done") ;
 } // Maybe_logical_AND_exp()
 
 void Rest_of_maybe_logical_OR_exp(){
     // 已經預取了
- /*   : rest_of_maybe_logical_AND_exp { OR maybe_logical_AND_exp } */
+    /*   : rest_of_maybe_logical_AND_exp { OR maybe_logical_AND_exp } */
     Trace("Rest_of_maybe_logical_OR_exp start") ;
     Rest_of_maybe_logical_AND_exp() ;
     while ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "||" ) {
@@ -759,9 +833,9 @@ void Rest_of_maybe_logical_OR_exp(){
 } // Rest_of_maybe_logical_OR_exp()
 
 
-void rest_of_maybe_conditional_exp_and_rest_of_maybe_logical_OR_exp(){ // 即romce_and_romloe
+void Rest_of_maybe_conditional_exp_and_rest_of_maybe_logical_OR_exp(){ // 即romce_and_romloe
     // 已經預取了
-/* : rest_of_maybe_logical_OR_exp [ '?' basic_expression ':' basic_expression ] */
+    /* : rest_of_maybe_logical_OR_exp [ '?' basic_expression ':' basic_expression ] */
     Trace("rest_of_maybe_conditional_exp_and_rest_of_maybe_logical_OR_exp start") ;
     Rest_of_maybe_logical_OR_exp() ;
     if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "?" ) {
@@ -778,14 +852,14 @@ void rest_of_maybe_conditional_exp_and_rest_of_maybe_logical_OR_exp(){ // 即rom
 
 
 bool Assignment_operator( TokenObject TokenObj ){
-/*: '=' | TE | DE | RE | PE | ME*/
+    /*: '=' | TE | DE | RE | PE | ME*/
     if ( TokenObj.Token == "=" ||  TokenObj.Token == "*=" ||  TokenObj.Token == "/=" ||  TokenObj.Token == "%=" || TokenObj.Token == "+=" ||  TokenObj.Token == "-=" ) return true ;
     return false ;
 } // Assignment_operator()
 
 void Actual_parameter_list(){
     // 已經預先取了
-/*: basic_expression { ',' basic_expression } */
+    /*: basic_expression { ',' basic_expression } */
     Trace("Actual_parameter_list start") ;
     Basic_expression() ;
     while ( gOneLineCommand[gOneLineCommand_NowPlace].Token != "," ) {
@@ -798,35 +872,43 @@ void Actual_parameter_list(){
 } //Actual_parameter_list()
 
 bool sign( TokenObject TokenObj){
-/*: '+' | '-' | '!'*/
+    /*: '+' | '-' | '!'*/
     if ( TokenObj.Token == "+" || TokenObj.Token == "-" || TokenObj.Token == "!" ) return true ;
     return false ;
 } // sign()
 
-void rest_of_PPMM_Identifier_started_basic_exp(){
-/*
-: [ '[' expression ']' ] romce_and_romloe
-*/
-}
+void Rest_of_PPMM_Identifier_started_basic_exp(){
+    /*
+     : [ '[' expression ']' ] romce_and_romloe
+     */
+   if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "[" ) {
+              GetNextInputAndPushTogOnelinecommand() ;
+       if ( ! IsExpression(gOneLineCommand[gOneLineCommand_NowPlace])) throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
+       Expression();
+        if ( gOneLineCommand[gOneLineCommand_NowPlace].Token != "]" ) throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
+   } // if()
+   
+    Rest_of_maybe_conditional_exp_and_rest_of_maybe_logical_OR_exp() ;
+} //Rest_of_PPMM_Identifier_started_basic_exp()
 
 
 void Rest_of_Identifier_started_basic_exp(){
     // 已經預先取了
-  /*  : [ '[' expression ']' ]
-      ( assignment_operator basic_expression
-        |
-        [ PP | MM ] romce_and_romloe
-      )
-    | '(' [ actual_parameter_list ] ')' romce_and_romloe
-   */
+    /*  : [ '[' expression ']' ]
+     ( assignment_operator basic_expression
+     |
+     [ PP | MM ] romce_and_romloe
+     )
+     | '(' [ actual_parameter_list ] ')' romce_and_romloe
+     */
     Trace("Rest_of_Identifier_started_basic_exp start") ;
     if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "(" ) {
-        // UNDO '(' [ actual_parameter_list ] ')' romce_and_romloe
         GetNextInputAndPushTogOnelinecommand() ;
         Actual_parameter_list() ;
         if ( gOneLineCommand[gOneLineCommand_NowPlace].Token != ")" ) throw new Unexpected(gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
-        // UNDO romce_and_romloe
-
+        GetNextInputAndPushTogOnelinecommand() ;
+        Rest_of_maybe_conditional_exp_and_rest_of_maybe_logical_OR_exp() ;
+        
     } //if()
     
     else {
@@ -845,7 +927,7 @@ void Rest_of_Identifier_started_basic_exp(){
         else {
             /* [ PP | MM ] romce_and_romloe */
             if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "++" || gOneLineCommand[gOneLineCommand_NowPlace].Token == "--" ) GetNextInputAndPushTogOnelinecommand() ;
-            // UNDO romce_and_romloe
+            Rest_of_maybe_conditional_exp_and_rest_of_maybe_logical_OR_exp() ;
         }
     } // else
     
@@ -854,44 +936,55 @@ void Rest_of_Identifier_started_basic_exp(){
 
 void Basic_expression(){
     // 已經預先取了
-  /*  : Identifier rest_of_Identifier_started_basic_exp
-    | ( PP | MM ) Identifier rest_of_PPMM_Identifier_started_basic_exp
-    | sign { sign } signed_unary_exp romce_and_romloe
-    | ( Constant | '(' expression ')' ) romce_and_romloe */
+    /*  : Identifier rest_of_Identifier_started_basic_exp
+     | ( PP | MM ) Identifier rest_of_PPMM_Identifier_started_basic_exp
+     | sign { sign } signed_unary_exp romce_and_romloe
+     | ( Constant | '(' expression ')' ) romce_and_romloe */
     Trace("Basic_expression start") ;
     if ( gOneLineCommand[gOneLineCommand_NowPlace].TokenType[TokenObjectType_TokenTyped] == TokenType_IDENT ) {
         GetNextInputAndPushTogOnelinecommand() ;
         Rest_of_Identifier_started_basic_exp() ;
     } // if()
     else if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "++" || gOneLineCommand[gOneLineCommand_NowPlace].Token == "--" ) {
-        //UNDO Identifier rest_of_PPMM_Identifier_started_basic_exp
+        GetNextInputAndPushTogOnelinecommand() ;
+        if ( gOneLineCommand[gOneLineCommand_NowPlace].TokenType[TokenObjectType_TokenTyped] != TokenType_IDENT ) throw new Unexpected(  gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
+        GetNextInputAndPushTogOnelinecommand() ;
+        Rest_of_PPMM_Identifier_started_basic_exp() ;
     } // else if()
     else if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "+" || gOneLineCommand[gOneLineCommand_NowPlace].Token == "-" ) {
-        // UNDO sign { sign } signed_unary_exp romce_and_romloe
+        GetNextInputAndPushTogOnelinecommand() ;
+        while ( ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "+" || gOneLineCommand[gOneLineCommand_NowPlace].Token == "-" ) ) GetNextInputAndPushTogOnelinecommand() ;
+        Signed_unary_exp();
+        Rest_of_maybe_conditional_exp_and_rest_of_maybe_logical_OR_exp() ;
     } //else if
     else {
-        // undo ( Constant | '(' expression ')' ) romce_and_romloe */
         if ( gOneLineCommand[gOneLineCommand_NowPlace].TokenType[TokenObjectType_TokenTyped] == TokenType_Digital || gOneLineCommand[gOneLineCommand_NowPlace].TokenType[TokenObjectType_TokenTyped] == TokenType_Constant ) {
-            
+            GetNextInputAndPushTogOnelinecommand() ;
+            Rest_of_maybe_conditional_exp_and_rest_of_maybe_logical_OR_exp() ;
         } // if()
         else if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "(" ) {
-            
+            GetNextInputAndPushTogOnelinecommand() ;
+            if ( !IsExpression(gOneLineCommand[gOneLineCommand_NowPlace] )) throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
+            Expression() ;
+            if ( gOneLineCommand[gOneLineCommand_NowPlace].Token != ")" )throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
+            GetNextInputAndPushTogOnelinecommand() ;
+            Rest_of_maybe_conditional_exp_and_rest_of_maybe_logical_OR_exp();
         } // if()
         else throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
     } // else
     
     // 這裡應該要幫下一個人先取
     Trace("Basic_expression Done") ;
-
+    
 } // Basic_expression()
 
 void Expression(){
     // 已經預先取了
-/*: basic_expression { ',' basic_expression } */
+    /*: basic_expression { ',' basic_expression } */
     Trace(" Expression Start " ) ;
     Basic_expression() ;
     
-    while ( gOneLineCommand[gOneLineCommand_NowPlace].Token != "," ) {
+    while ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "," ) {
         GetNextInputAndPushTogOnelinecommand() ;
         Basic_expression() ;
     } // while()
@@ -899,14 +992,14 @@ void Expression(){
     // 到這邊應該要是下一個 ==預先取
     Trace(" Expression Start " ) ;
 } //expression()
- 
+
 bool IsCompound_statement( TokenObject TokenObj ){
     if ( TokenObj.Token == "{" ) return true ;
     return false ;
 } //IsCompound_statement()
 
 bool IsExpression( TokenObject TokenObj) {
-  if ( TokenObj.TokenType[TokenObjectType_TokenTyped] == TokenType_Constant || TokenType_Constant == TokenType_Digital || TokenObj.TokenType[TokenObjectType_TokenTyped] == TokenType_IDENT )  return true ;
+    if ( TokenObj.TokenType[TokenObjectType_TokenTyped] == TokenType_Constant || TokenType_Constant == TokenType_Digital || TokenObj.TokenType[TokenObjectType_TokenTyped] == TokenType_IDENT )  return true ;
     if ( TokenObj.Token == "++" || TokenObj.Token == "--")  return true ;
     if ( TokenObj.Token == "+" || TokenObj.Token == "-" || TokenObj.Token == "(" ) return true ;
     return false ;
@@ -922,34 +1015,77 @@ bool IsStatement( TokenObject TokenObj){
 void Statement(){
     // 已經預先取了
     /*
-: ';'     // the null statement
-| expression ';'
-| RETURN [ expression ] ';'
-| compound_statement
-| IF '(' expression ')' statement [ ELSE statement ]
-| WHILE '(' expression ')' statement
-| DO statement WHILE '(' expression ')' ';'
-    */
+     : ';'     // the null statement
+     | expression ';'
+     | RETURN [ expression ] ';'
+     | compound_statement
+     | IF '(' expression ')' statement [ ELSE statement ]
+     | WHILE '(' expression ')' statement
+     | DO statement WHILE '(' expression ')' ';'
+     */
     Trace(" statement Start " ) ;
     if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == ";" ) ;
     else if ( IsExpression( gOneLineCommand[gOneLineCommand_NowPlace] ) ){
         Expression();
-        // undo ";"
+         if ( gOneLineCommand[gOneLineCommand_NowPlace].Token != ";" ) throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
+        GetNextInputAndPushTogOnelinecommand() ;
     } // else if()
     else if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "return" ) {
-        
+        GetNextInputAndPushTogOnelinecommand() ;
+        if ( IsExpression( gOneLineCommand[gOneLineCommand_NowPlace] ) ) Expression() ;
+        if ( gOneLineCommand[gOneLineCommand_NowPlace].Token != ";" ) throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
+        GetNextInputAndPushTogOnelinecommand() ;
     } //
     else if ( IsCompound_statement( gOneLineCommand[gOneLineCommand_NowPlace] )) {
-        
+        Compound_statement() ;
     }
     else if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "if" ) {
-        
+        GetNextInputAndPushTogOnelinecommand() ;
+        if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "(" ) {
+            GetNextInputAndPushTogOnelinecommand() ;
+            if (  !IsExpression( gOneLineCommand[gOneLineCommand_NowPlace] ) ) throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
+            Expression() ;
+            if ( gOneLineCommand[gOneLineCommand_NowPlace].Token != ")" ) throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
+            GetNextInputAndPushTogOnelinecommand() ;
+            if ( ! IsStatement( gOneLineCommand[gOneLineCommand_NowPlace] ) )throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
+            Statement() ;
+            if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "else" ) {
+                GetNextInputAndPushTogOnelinecommand() ;
+                if ( ! IsStatement( gOneLineCommand[gOneLineCommand_NowPlace] ) )throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
+                Statement() ;
+            } // if()
+        } // if()
     } // else if
     else if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "while" ){
-        
-    }
+        //  WHILE '(' expression ')' statement
+        GetNextInputAndPushTogOnelinecommand() ;
+        if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "(" ) {
+            GetNextInputAndPushTogOnelinecommand() ;
+            if (  !IsExpression( gOneLineCommand[gOneLineCommand_NowPlace] ) ) throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
+            Expression() ;
+            if ( gOneLineCommand[gOneLineCommand_NowPlace].Token != ")" ) throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
+            GetNextInputAndPushTogOnelinecommand() ;
+            if ( ! IsStatement( gOneLineCommand[gOneLineCommand_NowPlace] ) )throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
+            Statement() ;
+        } // if()
+    } // else if()
     else if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "do" ){
-        
+        // DO statement WHILE '(' expression ')' ';'
+        GetNextInputAndPushTogOnelinecommand() ;
+        if ( ! IsStatement( gOneLineCommand[gOneLineCommand_NowPlace] ) )throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
+        Statement() ;
+        if ( gOneLineCommand[gOneLineCommand_NowPlace].Token != "while" ) throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
+        GetNextInputAndPushTogOnelinecommand() ;
+        if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "(" ) {
+            GetNextInputAndPushTogOnelinecommand() ;
+            if (  !IsExpression( gOneLineCommand[gOneLineCommand_NowPlace] ) ) throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
+            Expression() ;
+            
+            if ( gOneLineCommand[gOneLineCommand_NowPlace].Token != ")" ) throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
+            GetNextInputAndPushTogOnelinecommand() ;
+            if ( gOneLineCommand[gOneLineCommand_NowPlace].Token != ";" ) throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
+            GetNextInputAndPushTogOnelinecommand() ;
+        } // if()
     }
     else throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
     
@@ -959,7 +1095,7 @@ void Statement(){
 
 void Declaration(){
     // 已經預先取了
-/*: type_specifier Identifier rest_of_declarators*/
+    /*: type_specifier Identifier rest_of_declarators*/
     Trace(" declaration start " ) ;
     GetNextInputAndPushTogOnelinecommand() ;
     if ( gOneLineCommand[gOneLineCommand_NowPlace].TokenType[TokenObjectType_TokenTyped] != TokenType_IDENT ) throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
@@ -973,7 +1109,7 @@ void Declaration(){
 
 void Compound_statement(){
     // 已經預先取了
-/*: '{' { declaration | statement } '}'*/
+    /*: '{' { declaration | statement } '}'*/
     Trace(" compound_statement start " ) ;
     if ( gOneLineCommand[gOneLineCommand_NowPlace].Token != "{" ) throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
     bool stop = false ;
@@ -991,8 +1127,8 @@ void Compound_statement(){
 } // compound_statement()
 
 void Formal_parameter_list(){
-/*: type_specifier [ '&' ] Identifier [ '[' Constant ']' ]
-  { ',' type_specifier [ '&' ] Identifier [ '[' Constant ']' ] }*/
+    /*: type_specifier [ '&' ] Identifier [ '[' Constant ']' ]
+     { ',' type_specifier [ '&' ] Identifier [ '[' Constant ']' ] }*/
     // 已經預先取type)specifier
     Trace(" formal_parameter_list start " ) ;
     GetNextInputAndPushTogOnelinecommand() ; // 取& 或 Identitifer
@@ -1002,9 +1138,8 @@ void Formal_parameter_list(){
     if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "[" ) {
         Containconstant() ;
     } // if ()
-      
-    GetNextInputAndPushTogOnelinecommand() ; // 拿到下一個 可能, 或其他的 其他就結束
-    while( gOneLineCommand[gOneLineCommand_NowPlace].Token != "," ) {
+
+    while( gOneLineCommand[gOneLineCommand_NowPlace].Token == "," ) {
         GetNextInputAndPushTogOnelinecommand() ;
         if ( !Type_specifier( gOneLineCommand[gOneLineCommand_NowPlace] ) ) throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
         GetNextInputAndPushTogOnelinecommand() ;
@@ -1014,21 +1149,20 @@ void Formal_parameter_list(){
         if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "[" ) {
             Containconstant();
         } // if ()
-        GetNextInputAndPushTogOnelinecommand() ;
     } // while()
     
     Trace(" formal_parameter_list Done " ) ;
 } // formal_parameter_list()
 
 void Function_definition_without_ID(){
-/*: '(' [ VOID | formal_parameter_list ] ')' compound_statement*/
+    /*: '(' [ VOID | formal_parameter_list ] ')' compound_statement*/
     Trace(" function_definition_without_ID start " ) ;
     GetNextInputAndPushTogOnelinecommand() ;
     if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "(" ) {
         GetNextInputAndPushTogOnelinecommand() ;
         /* [ VOID | formal_parameter_list ] */
         if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "void" ) {
-           GetNextInputAndPushTogOnelinecommand() ;
+            GetNextInputAndPushTogOnelinecommand() ;
         } // if()
         else if ( Type_specifier( gOneLineCommand[gOneLineCommand_NowPlace] ) ) {
             Formal_parameter_list() ;
@@ -1046,17 +1180,16 @@ void Function_definition_without_ID(){
 
 void Rest_of_declarators(){
     // 已經預先取 一定會進來
-/*: [ '[' Constant ']' ]
-  { ',' Identifier [ '[' Constant ']' ] } ';'*/
+    /*: [ '[' Constant ']' ]
+     { ',' Identifier [ '[' Constant ']' ] } ';'*/
     Trace("rest_of_declarators Start") ;
-     if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "[" ) Containconstant() ;
-    GetNextInputAndPushTogOnelinecommand() ;
-    while( gOneLineCommand[gOneLineCommand_NowPlace].Token != "," ) {
+    if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "[" ) Containconstant() ;
+    
+    while( gOneLineCommand[gOneLineCommand_NowPlace].Token == "," ) {
         GetNextInputAndPushTogOnelinecommand() ;
         if (  gOneLineCommand[gOneLineCommand_NowPlace].TokenType[TokenObjectType_TokenTyped] != TokenType_IDENT ) throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
         GetNextInputAndPushTogOnelinecommand() ;
         if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "[" ) Containconstant() ;
-        GetNextInputAndPushTogOnelinecommand() ;
     } // while()
     //這邊結束拿到的應該要是;
     if ( gOneLineCommand[gOneLineCommand_NowPlace].Token != ";" ) throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
@@ -1066,10 +1199,16 @@ void Rest_of_declarators(){
 } // rest_of_declarators()
 
 void Function_definition_or_declarators(){
-/*: function_definition_without_ID
-| rest_of_declarators*/
+    /*: function_definition_without_ID
+     | rest_of_declarators*/
+    Trace("Function_definition_or_declarators Start") ;
+    if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "(" ) Function_definition_without_ID() ;
+    else if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "[" || gOneLineCommand[gOneLineCommand_NowPlace].Token == "," || gOneLineCommand[gOneLineCommand_NowPlace].Token == ";"  ) Rest_of_declarators() ;
+    else throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
     
-}
+    
+    Trace("Function_definition_or_declarators Done") ;
+} //Function_definition_or_declarators ()
 
 bool IsDefinition( TokenObject TokenObj){
     if ( Type_specifier(TokenObj) ) return true ;
@@ -1078,29 +1217,36 @@ bool IsDefinition( TokenObject TokenObj){
 } //IsDefinition()
 
 bool Type_specifier(TokenObject TokenObj){
-   /* INT | CHAR | FLOAT | STRING | BOOL*/
+    /* INT | CHAR | FLOAT | STRING | BOOL*/
     if ( TokenObj.Token == "int" || TokenObj.Token == "char" || TokenObj.Token == "float" || TokenObj.Token == "string" || TokenObj.Token == "bool" ) return true ;
     return false ;
 } //type_specifier()
 
 void Definition(){
     Trace("definition Start") ;
-   /* :           VOID Identifier function_definition_without_ID
-    | type_specifier Identifier function_definition_or_declarators*/
+    /* :           VOID Identifier function_definition_without_ID
+     | type_specifier Identifier function_definition_or_declarators*/
+    string defineString = "" ;
     if ( gOneLineCommand[gOneLineCommand_NowPlace].Token == "void" ) {
         GetNextInputAndPushTogOnelinecommand() ;
         if ( gOneLineCommand[gOneLineCommand_NowPlace].TokenType[TokenObjectType_TokenTyped] == TokenType_IDENT ) {
-            // undo function_definition_without_ID
-            // 此處只讀到identity 沒有讀( 要再讀
+            defineString = gOneLineCommand[gOneLineCommand_NowPlace].Token ;
+            GetNextInputAndPushTogOnelinecommand() ;
             Function_definition_without_ID() ;
+            cout << "Definition of "<< defineString << " entered ..." << endl ;
         } // if()
         else throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
     } // if()
     else if ( Type_specifier( gOneLineCommand[gOneLineCommand_NowPlace] ) ) {
-       // undo type_specifier Identifier function_definition_or_declarators*/
-    }
+        GetNextInputAndPushTogOnelinecommand() ;
+        if ( gOneLineCommand[gOneLineCommand_NowPlace].TokenType[TokenObjectType_TokenTyped] != TokenType_IDENT)  throw new Unexpected( gOneLineCommand[gOneLineCommand_NowPlace].Token ) ;
+        defineString = gOneLineCommand[gOneLineCommand_NowPlace].Token ;
+        GetNextInputAndPushTogOnelinecommand() ;
+        Function_definition_or_declarators();
+        cout << "Definition of "<< defineString << " entered ..." << endl  ;
+    } // else if()
     else Trace("671 some error " ) ;
-    
+    GetNextInputAndPushTogOnelinecommand() ;
     Trace("definition Done") ;
 } // definition()
 
@@ -1112,16 +1258,11 @@ void User_input(){
     gOneLineCommand.push_back( TokenObj ) ;
     if ( IsDefinition( TokenObj ) ) Definition() ;
     else {
-        // undo statement
         Statement() ;
     }
-    // undo { definition | statement }
-    
-    GetNextInputAndPushTogOnelinecommand() ;
     while ( 1 ) {
         if ( IsDefinition( TokenObj ) ) Definition() ;
         else if ( IsStatement( TokenObj) ) Statement() ;
-        GetNextInputAndPushTogOnelinecommand() ;
     } // while()
     
     Trace("user_input Done") ;
@@ -1131,8 +1272,9 @@ void User_input(){
 
 void Test(){
     try {
-    TokenObject Token = GetNextToken() ;
-    cout << "Token is " << Token.Token << endl ;
+//        TokenObject Token = GetNextToken() ;
+//        cout << "Token is " << Token.Token << endl ;
+        User_input();
     }
     catch ( Undefined * Undefined1 ) {
         cout << Undefined1->mMsg  << endl ;
@@ -1157,6 +1299,6 @@ int main(int argc, const char * argv[]) {
     while(1) {
         Test() ;
     } // while()
-        
+    
     return 0;
 }
